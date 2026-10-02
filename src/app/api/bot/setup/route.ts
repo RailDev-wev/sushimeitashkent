@@ -1,8 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
+import type { Bot } from "grammy";
 import { locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getSiteUrl } from "@/lib/site-url";
-import { getBot } from "@/lib/telegram-server";
+import { getBot, getOrdersChatId, migratedChatId } from "@/lib/telegram-server";
 
 export const dynamic = "force-dynamic";
 
@@ -61,15 +62,50 @@ export async function GET(request: Request) {
   }
 
   const me = await bot.api.getMe().catch(() => null);
-  const ordersChat = process.env.TELEGRAM_ORDERS_CHAT_ID;
+  const ordersChat = getOrdersChatId();
+  const orders = ordersChat && me ? await checkOrdersChat(bot, ordersChat, me.id) : null;
 
   return Response.json({
     bot: me ? `@${me.username}` : null,
     siteUrl,
     steps,
-    ordersChat: ordersChat ?? null,
-    next: ordersChat
-      ? "Готово. Откройте бота в Telegram и нажмите /start."
-      : "Добавьте бота в группу заказов, отправьте там /chatid, впишите число в TELEGRAM_ORDERS_CHAT_ID в Vercel и сделайте Redeploy.",
+    ordersChat,
+    ordersChatCheck: orders?.status ?? null,
+    next: !ordersChat
+      ? "Добавьте бота в группу заказов, отправьте там /chatid, впишите число в TELEGRAM_ORDERS_CHAT_ID в Vercel и сделайте Redeploy."
+      : orders?.ok
+        ? "Готово. Откройте бота в Telegram, нажмите /start и сделайте тестовый заказ."
+        : orders?.fix ?? "Проверьте TELEGRAM_ORDERS_CHAT_ID.",
   });
+}
+
+/** Checks that the bot can post to the staff group without sending anything there. */
+async function checkOrdersChat(bot: Bot, chatId: string, botId: number): Promise<{ ok: boolean; status: string; fix?: string }> {
+  try {
+    const chat = await bot.api.getChat(chatId);
+    const member = await bot.api.getChatMember(chatId, botId);
+    const title = "title" in chat ? chat.title : chatId;
+    if (member.status === "left" || member.status === "kicked") {
+      return { ok: false, status: `бот не состоит в «${title}»`, fix: "Добавьте бота в группу заказов и повторите заказ (Redeploy не нужен)." };
+    }
+    if (member.status === "restricted" && !member.can_send_messages) {
+      return { ok: false, status: `боту запрещено писать в «${title}»`, fix: "Разрешите боту отправлять сообщения в группе." };
+    }
+    return { ok: true, status: `ok: «${title}», бот — ${member.status}` };
+  } catch (err) {
+    const newId = migratedChatId(err);
+    if (newId) {
+      return {
+        ok: false,
+        status: "группа стала супергруппой, у неё новый id",
+        fix: `Замените TELEGRAM_ORDERS_CHAT_ID на ${newId} в Vercel и сделайте Redeploy.`,
+      };
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      status: message,
+      fix: "Telegram не видит эту группу: проверьте, что бот в ней есть, и заново получите id через /chatid.",
+    };
+  }
 }

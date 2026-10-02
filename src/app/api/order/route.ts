@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 import { format, formatPrice, getDictionary } from "@/i18n/dictionaries";
 import { getOrderableItem } from "@/lib/menu";
 import { normalizePhone, orderSchema, type Order } from "@/lib/order-schema";
-import { escapeHtml, getBot, verifyInitData, type TelegramUser } from "@/lib/telegram-server";
+import { escapeHtml, getBot, getOrdersChatId, migratedChatId, verifyInitData, type TelegramUser } from "@/lib/telegram-server";
 
 // Best-effort per-instance limit; enough to stop accidental double submits and casual spam.
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
   const tgUser = bot ? verifyInitData(order.initData, bot.token) : null;
   const orderNo = newOrderNo();
   const text = staffMessage(order, orderNo, lines, total, phone, tgUser);
-  const chatId = process.env.TELEGRAM_ORDERS_CHAT_ID;
+  let chatId = getOrdersChatId();
 
   if (!bot || !chatId) {
     // Local dev without a bot: print what would be sent.
@@ -119,11 +119,20 @@ export async function POST(request: Request) {
     return Response.json({ orderNo });
   }
 
+  const send = (to: string | number) =>
+    bot.api.sendMessage(to, text, { parse_mode: "HTML", link_preview_options: { is_disabled: true } });
+
   try {
-    const sent = await bot.api.sendMessage(chatId, text, {
-      parse_mode: "HTML",
-      link_preview_options: { is_disabled: true },
-    });
+    let sent;
+    try {
+      sent = await send(chatId);
+    } catch (err) {
+      const newId = migratedChatId(err);
+      if (!newId) throw err;
+      console.warn(`[order] staff group became a supergroup: set TELEGRAM_ORDERS_CHAT_ID=${newId}`);
+      chatId = String(newId);
+      sent = await send(chatId);
+    }
     if (order.location) {
       await bot.api
         .sendLocation(chatId, order.location.lat, order.location.lng, {

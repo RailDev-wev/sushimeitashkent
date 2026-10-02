@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { Bot } from "grammy";
+import { Bot, GrammyError } from "grammy";
 
 export type TelegramUser = {
   id: number;
@@ -44,6 +44,17 @@ export function verifyInitData(initData: string, botToken: string): TelegramUser
 
 export function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Staff group id from env; tolerant of stray spaces/quotes pasted into Vercel. */
+export function getOrdersChatId(): string | null {
+  const raw = process.env.TELEGRAM_ORDERS_CHAT_ID?.trim().replace(/^["']|["']$/g, "");
+  return raw || null;
+}
+
+/** When a group is upgraded to a supergroup its id changes; Telegram reports the new one. */
+export function migratedChatId(err: unknown): number | null {
+  return err instanceof GrammyError ? (err.parameters.migrate_to_chat_id ?? null) : null;
 }
 
 let bot: Bot | null = null;
