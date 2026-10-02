@@ -9,7 +9,18 @@
     "searchEmpty": "Nothing found",
     "pcs": "{n} pcs",
     "add": "Add",
-    "new": "New"
+    "new": "New",
+    "soldOut": "Sold out"
+  },
+  "branch": {
+    "title": "Branch",
+    "choose": "Choose a branch",
+    "detect": "Find the nearest by location",
+    "detecting": "Locating…",
+    "nearest": "nearest",
+    "km": "{n} km",
+    "denied": "No access to location — allow it in settings",
+    "unavailable": "Couldn’t get your location"
   },
   "cart": {
     "title": "Cart",
@@ -18,7 +29,9 @@
     "total": "Total",
     "clear": "Clear",
     "open": "Cart",
-    "checkout": "Checkout"
+    "checkout": "Checkout",
+    "unavailable": "Not available at “{branch}” — won’t be included",
+    "remove": "Remove"
   },
   "checkout": {
     "title": "Checkout",
@@ -34,7 +47,6 @@
     "details": "Entrance, floor, apartment",
     "location": "Share my location",
     "locationAdded": "Location added",
-    "locationError": "Couldn’t get your location",
     "pickupFrom": "Pickup address: {address}",
     "payment": "Pay on receipt",
     "cash": "Cash",
@@ -43,7 +55,8 @@
     "commentPlaceholder": "Special requests, preferred time, etc.",
     "submit": "Place order",
     "sending": "Sending…",
-    "note": "No online payment. After you place the order, our operator will call you to confirm it and the delivery fee."
+    "note": "No online payment. After you place the order, our operator will call you to confirm it and the delivery fee.",
+    "locationHint": "With your location the courier finds you faster"
   },
   "errors": {
     "required": "Required",
@@ -74,6 +87,9 @@
     "menuButton": "Menu",
     "commandStart": "Open menu",
     "shortDescription": "SUSHIMEI sushi & rolls delivery",
-    "description": "Menu, cart and ordering in a few taps. Our operator will call you to confirm."
+    "description": "Menu, cart and ordering in a few taps. Our operator will call you to confirm.",
+    "unsubscribed": "You’ve unsubscribed from promotions. Tap /start to get them again",
+    "broadcastFooter": "Unsubscribe from promotions: /stop",
+    "commandStop": "Unsubscribe from promotions"
   }
 }

@@ -1,6 +1,9 @@
 import { randomInt } from "node:crypto";
 import { format, formatPrice, getDictionary } from "@/i18n/dictionaries";
+import { branches, getBranch, type Branch } from "@/config/branches";
+import { db } from "@/lib/db";
 import { getOrderableItem } from "@/lib/menu";
+import { takeKeyboard } from "@/lib/order-actions";
 import { normalizePhone, orderSchema, type Order } from "@/lib/order-schema";
 import { escapeHtml, getBot, getOrdersChatId, migratedChatId, verifyInitData, type TelegramUser } from "@/lib/telegram-server";
 
@@ -32,13 +35,14 @@ function prettyPhone(phone: string) {
 }
 
 /** Message for the staff group. Always in Russian regardless of the customer's language. */
-function staffMessage(order: Order, orderNo: string, lines: Line[], total: number, phone: string, tgUser: TelegramUser | null) {
+function staffMessage(order: Order, branch: Branch, orderNo: string, lines: Line[], total: number, phone: string, tgUser: TelegramUser | null) {
   const ru = getDictionary("ru");
   const e = escapeHtml;
   const out: string[] = [];
 
   out.push(`🍣 <b>Новый заказ #${orderNo}</b>`);
   out.push(`${tgUser ? "📱 Telegram" : "🌐 Сайт"} · ${order.locale.toUpperCase()}`);
+  out.push(branches.length > 1 ? `🏪 Клиент выбрал: <b>${e(branch.name.ru)}</b>` : `🏪 ${e(branch.name.ru)}`);
   out.push("");
   out.push(`👤 ${e(order.name)}`);
   out.push(`📞 <a href="tel:${phone}">${prettyPhone(phone)}</a>`);
@@ -98,11 +102,25 @@ export async function POST(request: Request) {
 
   if (rateLimited(ip)) return Response.json({ error: "rate_limit" }, { status: 429 });
 
+  const branch = order.branchId ? getBranch(order.branchId) : branches[0];
+  if (!branch) return Response.json({ error: "invalid" }, { status: 400 });
+
+  // The stop-list is re-checked here; if the database is down, take the order rather than lose it.
+  const stopped = new Set(
+    await db
+      .getStopList()
+      .then((s) => s[branch.id] ?? [])
+      .catch((err) => {
+        console.error("[order] stop-list unavailable", err);
+        return [];
+      }),
+  );
+
   // Prices come from the server-side menu, never from the client.
   const lines: Line[] = [];
   for (const { id, qty } of order.items) {
     const item = getOrderableItem(id);
-    if (!item) return Response.json({ error: "unavailable" }, { status: 409 });
+    if (!item || stopped.has(id)) return Response.json({ error: "unavailable" }, { status: 409 });
     lines.push({ name: item.name.ru, pcs: item.pcs, qty, sum: item.price * qty });
   }
   const total = lines.reduce((n, l) => n + l.sum, 0);
@@ -110,7 +128,12 @@ export async function POST(request: Request) {
   const bot = getBot();
   const tgUser = bot ? verifyInitData(order.initData, bot.token) : null;
   const orderNo = newOrderNo();
-  const text = staffMessage(order, orderNo, lines, total, phone, tgUser);
+  const text = staffMessage(order, branch, orderNo, lines, total, phone, tgUser);
+
+  // Customer base for promotions: only Telegram users can be messaged by the bot.
+  if (tgUser) {
+    await db.upsertCustomer(tgUser, { phone, ordered: true }).catch((err) => console.error("[order] customer upsert failed", err));
+  }
   let chatId = getOrdersChatId();
 
   if (!bot || !chatId) {
@@ -120,7 +143,11 @@ export async function POST(request: Request) {
   }
 
   const send = (to: string | number) =>
-    bot.api.sendMessage(to, text, { parse_mode: "HTML", link_preview_options: { is_disabled: true } });
+    bot.api.sendMessage(to, text, {
+      parse_mode: "HTML",
+      link_preview_options: { is_disabled: true },
+      reply_markup: takeKeyboard(),
+    });
 
   try {
     let sent;

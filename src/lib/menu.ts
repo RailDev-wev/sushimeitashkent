@@ -3,7 +3,9 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import menuData from "@/data/menu.json";
 import type { Locale } from "@/i18n/config";
-import type { MenuCategory, MenuItem } from "./menu-types";
+import { branches, mapUrl } from "@/config/branches";
+import { db } from "./db";
+import type { BranchInfo, MenuCategory, MenuItem, StopList } from "./menu-types";
 
 type RawItem = {
   id: string;
@@ -63,4 +65,30 @@ export function getMenu(locale: Locale): { categories: MenuCategory[]; items: Me
 export function getOrderableItem(id: string) {
   const item = raw.items.find((i) => i.id === id);
   return item && isOrderable(item) ? item : null;
+}
+
+export function getBranches(locale: Locale): BranchInfo[] {
+  return branches.map((b) => ({
+    id: b.id,
+    name: b.name[locale],
+    address: b.address[locale],
+    lat: b.lat,
+    lng: b.lng,
+    mapUrl: mapUrl(b),
+  }));
+}
+
+/** Stop-list for rendering. A database hiccup shouldn't take the menu down, so it degrades to "all available". */
+export async function getStopListSafe(): Promise<StopList> {
+  try {
+    return await db.getStopList();
+  } catch (err) {
+    console.error("[menu] failed to load stop-list", err);
+    return {};
+  }
+}
+
+/** All orderable items regardless of branch, with Russian names (admin panel). */
+export function getAllItemsRu() {
+  return raw.items.filter(isOrderable).map((i) => ({ id: i.id, category: i.category, name: i.name.ru }));
 }

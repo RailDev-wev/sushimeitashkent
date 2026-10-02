@@ -9,7 +9,18 @@
     "searchEmpty": "Hech narsa topilmadi",
     "pcs": "{n} dona",
     "add": "Savatga",
-    "new": "Yangi"
+    "new": "Yangi",
+    "soldOut": "Mavjud emas"
+  },
+  "branch": {
+    "title": "Filial",
+    "choose": "Filialni tanlang",
+    "detect": "Geolokatsiya bo‘yicha eng yaqinini topish",
+    "detecting": "Aniqlanmoqda…",
+    "nearest": "eng yaqin",
+    "km": "{n} km",
+    "denied": "Geolokatsiyaga ruxsat yo‘q — sozlamalarda ruxsat bering",
+    "unavailable": "Joylashuvni aniqlab bo‘lmadi"
   },
   "cart": {
     "title": "Savat",
@@ -18,7 +29,9 @@
     "total": "Jami",
     "clear": "Tozalash",
     "open": "Savat",
-    "checkout": "Buyurtma berish"
+    "checkout": "Buyurtma berish",
+    "unavailable": "«{branch}» filialida yo‘q — buyurtmaga kirmaydi",
+    "remove": "Olib tashlash"
   },
   "checkout": {
     "title": "Buyurtmani rasmiylashtirish",
@@ -34,7 +47,6 @@
     "details": "Podyezd, qavat, xonadon",
     "location": "Geolokatsiyani yuborish",
     "locationAdded": "Geolokatsiya qo‘shildi",
-    "locationError": "Joylashuvni aniqlab bo‘lmadi",
     "pickupFrom": "Olib ketish manzili: {address}",
     "payment": "Qabul qilishda to‘lov",
     "cash": "Naqd",
@@ -43,7 +55,8 @@
     "commentPlaceholder": "Buyurtma bo‘yicha istaklar, qulay vaqt va h.k.",
     "submit": "Buyurtmani yuborish",
     "sending": "Yuborilmoqda…",
-    "note": "Onlayn to‘lov yo‘q. Yuborganingizdan so‘ng operator qo‘ng‘iroq qilib, buyurtma va yetkazib berish narxini tasdiqlaydi."
+    "note": "Onlayn to‘lov yo‘q. Yuborganingizdan so‘ng operator qo‘ng‘iroq qilib, buyurtma va yetkazib berish narxini tasdiqlaydi.",
+    "locationHint": "Geolokatsiya bilan kuryer sizni tezroq topadi"
   },
   "errors": {
     "required": "Maydonni to‘ldiring",
@@ -74,6 +87,9 @@
     "menuButton": "Menyu",
     "commandStart": "Menyuni ochish",
     "shortDescription": "SUSHIMEI — sushi va rollar yetkazib berish",
-    "description": "Menyu, savat va bir necha bosishda buyurtma. Operator tasdiqlash uchun qo‘ng‘iroq qiladi."
+    "description": "Menyu, savat va bir necha bosishda buyurtma. Operator tasdiqlash uchun qo‘ng‘iroq qiladi.",
+    "unsubscribed": "Aksiyalar xabarnomasidan obunani bekor qildingiz. Yana olish uchun /start ni bosing",
+    "broadcastFooter": "Xabarnomadan voz kechish: /stop",
+    "commandStop": "Aksiyalardan voz kechish"
   }
 }

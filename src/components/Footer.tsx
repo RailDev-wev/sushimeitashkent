@@ -1,3 +1,4 @@
+import { branches, mapUrl } from "@/config/branches";
 import { phoneHref, site } from "@/config/site";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -8,7 +9,12 @@ export function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const rows = [
     site.hours && { label: dict.footer.hours, value: `${dict.footer.daily}, ${site.hours}` },
     site.phone && { label: dict.footer.phone, value: site.phone, href: phoneHref(site.phone) },
-    site.address && { label: dict.footer.address, value: site.address[locale], href: site.mapUrl ?? undefined, external: true },
+    ...branches.map((b) => ({
+      label: branches.length > 1 ? `${dict.branch.title} ${b.name[locale]}` : dict.footer.address,
+      value: b.address[locale],
+      href: mapUrl(b),
+      external: true,
+    })),
     site.instagram && { label: "Instagram", value: `@${site.instagram.handle}`, href: site.instagram.url, external: true },
   ].filter(Boolean) as Row[];
 

@@ -31,7 +31,17 @@ export type TelegramWebApp = {
   setBottomBarColor?: (c: string) => void;
   onEvent: (e: string, cb: () => void) => void;
   offEvent: (e: string, cb: () => void) => void;
+  showConfirm?: (message: string, cb: (ok: boolean) => void) => void;
   requestContact: (cb: (shared: boolean, res?: { responseUnsafe?: { contact?: { phone_number?: string } } }) => void) => void;
+  LocationManager?: {
+    isInited: boolean;
+    isLocationAvailable: boolean;
+    isAccessRequested: boolean;
+    isAccessGranted: boolean;
+    init: (cb?: () => void) => void;
+    getLocation: (cb: (data: { latitude: number; longitude: number } | null) => void) => void;
+    openSettings: () => void;
+  };
   MainButton: BottomButton;
   BackButton: { show: () => void; hide: () => void; onClick: (cb: () => void) => void; offClick: (cb: () => void) => void };
   HapticFeedback?: {
@@ -127,4 +137,45 @@ export function useBackButton(onBack: (() => void) | null) {
       tg.BackButton.hide();
     };
   }, [enabled]);
+}
+
+export type LocationResult =
+  | { ok: true; lat: number; lng: number }
+  | { ok: false; reason: "denied" | "unavailable" };
+
+function browserLocation(): Promise<LocationResult> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve({ ok: false, reason: "unavailable" });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ ok: true, lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => resolve({ ok: false, reason: err.code === err.PERMISSION_DENIED ? "denied" : "unavailable" }),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  });
+}
+
+/**
+ * Customer location: Telegram's native LocationManager inside the Mini App (Bot API 8.0+),
+ * the browser Geolocation API elsewhere or on older Telegram clients.
+ */
+export function requestLocation(): Promise<LocationResult> {
+  const tg = getTelegram();
+  const lm = tg?.isVersionAtLeast("8.0") ? tg.LocationManager : undefined;
+  if (!lm) return browserLocation();
+
+  return new Promise((resolve) => {
+    const read = () => {
+      if (!lm.isLocationAvailable) return resolve(browserLocation());
+      // Denied earlier: Telegram won't prompt again, only its settings screen can re-enable access.
+      if (lm.isAccessRequested && !lm.isAccessGranted) {
+        lm.openSettings();
+        return resolve({ ok: false, reason: "denied" });
+      }
+      lm.getLocation((data) =>
+        resolve(data ? { ok: true, lat: data.latitude, lng: data.longitude } : { ok: false, reason: "denied" }),
+      );
+    };
+    if (lm.isInited) read();
+    else lm.init(read);
+  });
 }

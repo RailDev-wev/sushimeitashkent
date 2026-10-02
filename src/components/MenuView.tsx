@@ -4,28 +4,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/i18n/dictionaries";
-import type { MenuCategory, MenuItem } from "@/lib/menu-types";
+import type { BranchInfo, MenuCategory, MenuItem, StopList } from "@/lib/menu-types";
 import { useMainButton, useIsTelegram } from "@/lib/telegram";
+import { useBranch } from "@/lib/use-branch";
 import { useCartSummary } from "@/lib/use-cart-summary";
+import { BranchPicker } from "./BranchPicker";
 import { ProductCard } from "./ProductCard";
 import { useI18n } from "./Providers";
 
-type Props = { categories: MenuCategory[]; items: MenuItem[] };
+type Props = { categories: MenuCategory[]; items: MenuItem[]; branches: BranchInfo[]; stopList: StopList };
 
 const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4";
 
-export function MenuView({ categories, items }: Props) {
+export function MenuView({ categories, items, branches, stopList }: Props) {
   const { locale, dict } = useI18n();
   const router = useRouter();
   const isTelegram = useIsTelegram();
-  const { count, total, qtyOf } = useCartSummary(items);
+  const { branch, unavailable, select } = useBranch(branches, stopList);
+  const { rows, count, total, qtyOf } = useCartSummary(items, unavailable);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(categories[0]?.id);
   const navRef = useRef<HTMLDivElement>(null);
 
   const cartHref = `/${locale}/cart`;
   const cartLabel = `${dict.cart.open} В· ${formatPrice(total, dict)}`;
-  useMainButton(count > 0 ? cartLabel : null, () => router.push(cartHref));
+  // Shown while anything is in the cart, even items this branch lacks, so the customer can see why.
+  useMainButton(rows.length > 0 ? cartLabel : null, () => router.push(cartHref));
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,6 +62,11 @@ export function MenuView({ categories, items }: Props) {
 
   return (
     <>
+      {branches.length > 1 && (
+        <div className="mx-auto max-w-6xl px-4 pt-1">
+          <BranchPicker branches={branches} current={branch} onSelect={select} />
+        </div>
+      )}
       <div className="sticky top-0 z-20 bg-bg/95 backdrop-blur supports-[backdrop-filter]:bg-bg/80">
         <div className="mx-auto max-w-6xl px-4 pt-2 pb-2">
           <label className="flex h-11 items-center gap-2 rounded-xl bg-surface px-3 ring-1 ring-line focus-within:ring-2 focus-within:ring-accent">
@@ -97,7 +106,7 @@ export function MenuView({ categories, items }: Props) {
           results.length ? (
             <div className={`${GRID} pt-2`}>
               {results.map((item) => (
-                <ProductCard key={item.id} item={item} qty={qtyOf(item.id)} />
+                <ProductCard key={item.id} item={item} qty={qtyOf(item.id)} soldOut={unavailable.has(item.id)} />
               ))}
             </div>
           ) : (
@@ -111,7 +120,7 @@ export function MenuView({ categories, items }: Props) {
                 {items
                   .filter((i) => i.category === c.id)
                   .map((item) => (
-                    <ProductCard key={item.id} item={item} qty={qtyOf(item.id)} />
+                    <ProductCard key={item.id} item={item} qty={qtyOf(item.id)} soldOut={unavailable.has(item.id)} />
                   ))}
               </div>
             </section>
@@ -120,7 +129,7 @@ export function MenuView({ categories, items }: Props) {
       </main>
 
       {/* In Telegram the native MainButton replaces this bar. */}
-      {!isTelegram && count > 0 && (
+      {!isTelegram && rows.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Link
             href={cartHref}

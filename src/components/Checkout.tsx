@@ -5,29 +5,32 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { format, formatPrice } from "@/i18n/dictionaries";
 import { useCart, useCustomer, type CustomerDraft } from "@/lib/cart-store";
-import type { MenuItem } from "@/lib/menu-types";
+import type { BranchInfo, MenuItem, StopList } from "@/lib/menu-types";
 import { normalizePhone, type OrderInput } from "@/lib/order-schema";
 import { getTelegram, haptic, useBackButton, useIsTelegram, useMainButton } from "@/lib/telegram";
+import { useBranch, useDetectLocation } from "@/lib/use-branch";
 import { useCartSummary } from "@/lib/use-cart-summary";
+import { BranchPicker, PinIcon } from "./BranchPicker";
 import { ItemImage } from "./ItemImage";
 import { useI18n } from "./Providers";
 import { QtyControl } from "./QtyControl";
 
-type Props = { items: MenuItem[]; pickupAddress: string | null; mapUrl: string | null; phone: string | null };
+type Props = { items: MenuItem[]; branches: BranchInfo[]; stopList: StopList; phone: string | null };
 type Errors = Partial<Record<"name" | "phone" | "address" | "form", string>>;
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "done"; orderNo: string };
 
-export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone }: Props) {
+export function Checkout({ items, branches, stopList, phone: restaurantPhone }: Props) {
   const { locale, dict } = useI18n();
   const router = useRouter();
   const isTelegram = useIsTelegram();
-  const { rows, total, count, ready } = useCartSummary(items);
+  const { branch, unavailable, select } = useBranch(branches, stopList);
+  const { rows, orderable, total, count, ready } = useCartSummary(items, unavailable);
+  const { location, status: locationStatus, detect } = useDetectLocation(branches);
   const clearCart = useCart((s) => s.clear);
+  const dropLine = useCart((s) => s.drop);
   const customer = useCustomer();
   const [comment, setComment] = useState("");
   const [website, setWebsite] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationState, setLocationState] = useState<"idle" | "loading" | "error">("idle");
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
@@ -56,22 +59,13 @@ export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone 
     });
   }
 
-  function requestLocation() {
-    if (!navigator.geolocation) return setLocationState("error");
-    setLocationState("loading");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocationState("idle");
-        setErrors((e) => ({ ...e, address: undefined }));
-      },
-      () => setLocationState("error"),
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
+  async function shareLocation() {
+    // Passive: suggests the nearest branch only if the customer hasn't chosen one by hand.
+    if (await detect({ pickNearest: false })) setErrors((e) => ({ ...e, address: undefined }));
   }
 
   async function submit() {
-    if (status.kind !== "idle" || rows.length === 0) return;
+    if (status.kind !== "idle" || orderable.length === 0) return;
     const next: Errors = {};
     if (!customer.name.trim()) next.name = dict.errors.required;
     if (!normalizePhone(customer.phone)) next.phone = dict.errors.phone;
@@ -84,7 +78,8 @@ export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone 
     }
 
     const body: OrderInput = {
-      items: rows.map((r) => ({ id: r.item.id, qty: r.qty })),
+      items: orderable.map((r) => ({ id: r.item.id, qty: r.qty })),
+      branchId: branch.id,
       name: customer.name,
       phone: customer.phone,
       deliveryType: customer.deliveryType,
@@ -123,7 +118,7 @@ export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone 
 
   const sending = status.kind === "sending";
   useMainButton(
-    done ? dict.success.close : rows.length ? `${dict.checkout.submit} · ${formatPrice(total, dict)}` : null,
+    done ? dict.success.close : orderable.length ? `${dict.checkout.submit} · ${formatPrice(total, dict)}` : null,
     () => (done ? getTelegram()?.close() : submit()),
     { loading: sending },
   );
@@ -177,15 +172,34 @@ export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone 
       </div>
 
       <ul className="divide-y divide-line rounded-2xl bg-surface px-3">
-        {rows.map(({ item, qty }) => (
+        {rows.map(({ item, qty, available }) => (
           <li key={item.id} className="flex items-center gap-3 py-3">
-            <ItemImage src={item.image} alt={item.name} sizes="64px" className="h-14 w-14 shrink-0 rounded-xl" />
+            <ItemImage
+              src={item.image}
+              alt={item.name}
+              sizes="64px"
+              className={`h-14 w-14 shrink-0 rounded-xl ${available ? "" : "opacity-40 grayscale"}`}
+            />
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 leading-snug font-semibold">{item.name}</p>
-              <p className="text-sm text-muted tabular-nums">{formatPrice(item.price * qty, dict)}</p>
+              <p className={`line-clamp-2 leading-snug font-semibold ${available ? "" : "text-muted line-through"}`}>{item.name}</p>
+              {available ? (
+                <p className="text-sm text-muted tabular-nums">{formatPrice(item.price * qty, dict)}</p>
+              ) : (
+                <p className="text-sm text-danger">{format(dict.cart.unavailable, { branch: branch.name })}</p>
+              )}
             </div>
             <div className="w-28 shrink-0">
-              <QtyControl id={item.id} qty={qty} addLabel={dict.menu.add} size="sm" />
+              {available ? (
+                <QtyControl id={item.id} qty={qty} addLabel={dict.menu.add} size="sm" />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => dropLine(item.id)}
+                  className="h-9 w-full rounded-full bg-surface-2 text-sm font-semibold text-muted hover:text-danger"
+                >
+                  {dict.cart.remove}
+                </button>
+              )}
             </div>
           </li>
         ))}
@@ -238,6 +252,7 @@ export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone 
         </Section>
 
         <Section title={dict.checkout.howToGet}>
+          <BranchPicker branches={branches} current={branch} onSelect={select} className="w-full justify-start" />
           <Segmented
             value={customer.deliveryType}
             onChange={(deliveryType) => customer.update({ deliveryType })}
@@ -269,29 +284,35 @@ export function Checkout({ items, pickupAddress, mapUrl, phone: restaurantPhone 
               </Field>
               <button
                 type="button"
-                onClick={requestLocation}
-                disabled={locationState === "loading"}
-                className={`flex items-center gap-2 text-sm font-semibold ${location ? "text-success" : "text-accent"} disabled:opacity-60`}
+                onClick={shareLocation}
+                disabled={locationStatus === "loading"}
+                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm ring-1 transition-colors disabled:opacity-60 ${
+                  location ? "bg-success/10 text-success ring-success/30" : "text-accent ring-accent/40 hover:bg-accent-soft"
+                }`}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
-                  <circle cx="12" cy="9.5" r="2.5" />
-                </svg>
-                {location ? dict.checkout.locationAdded : dict.checkout.location}
+                <PinIcon className="h-5 w-5 shrink-0" />
+                <span>
+                  <span className="block font-semibold">
+                    {locationStatus === "loading"
+                      ? dict.branch.detecting
+                      : location
+                        ? dict.checkout.locationAdded
+                        : dict.checkout.location}
+                  </span>
+                  {!location && <span className="block text-muted">{dict.checkout.locationHint}</span>}
+                </span>
               </button>
-              {locationState === "error" && <p className="text-sm text-danger">{dict.checkout.locationError}</p>}
+              {(locationStatus === "denied" || locationStatus === "unavailable") && (
+                <p className="text-sm text-danger">{dict.branch[locationStatus]}</p>
+              )}
             </>
           ) : (
-            pickupAddress && (
-              <p className="text-sm text-muted">
-                {format(dict.checkout.pickupFrom, { address: pickupAddress })}
-                {mapUrl && (
-                  <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block font-semibold text-accent">
-                    {dict.footer.openMap}
-                  </a>
-                )}
-              </p>
-            )
+            <p className="text-sm text-muted">
+              {format(dict.checkout.pickupFrom, { address: branch.address })}
+              <a href={branch.mapUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block font-semibold text-accent">
+                {dict.footer.openMap}
+              </a>
+            </p>
           )}
         </Section>
 

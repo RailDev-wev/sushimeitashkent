@@ -11,6 +11,8 @@ type CartState = {
   lines: Record<string, number>;
   add: (id: string) => void;
   remove: (id: string) => void;
+  /** Removes the line whatever its quantity. */
+  drop: (id: string) => void;
   clear: () => void;
 };
 
@@ -28,6 +30,12 @@ export const useCart = create<CartState>()(
           else delete lines[id];
           return { lines };
         }),
+      drop: (id) =>
+        set((s) => {
+          const lines = { ...s.lines };
+          delete lines[id];
+          return { lines };
+        }),
       clear: () => set({ lines: {} }),
     }),
     { name: "sushimei-cart" },
@@ -41,6 +49,9 @@ export type CustomerDraft = {
   address: string;
   details: string;
   payment: "cash" | "card";
+  branchId: string | null;
+  /** True once the customer picked a branch themselves; then location no longer overrides it. */
+  branchManual: boolean;
 };
 
 type CustomerState = CustomerDraft & { update: (patch: Partial<CustomerDraft>) => void };
@@ -55,6 +66,8 @@ export const useCustomer = create<CustomerState>()(
       address: "",
       details: "",
       payment: "cash",
+      branchId: null,
+      branchManual: false,
       update: (patch) => set(patch),
     }),
     { name: "sushimei-customer" },
@@ -69,3 +82,9 @@ export function useHydrated() {
     () => false,
   );
 }
+
+/** Last known customer location for this session only (not persisted). */
+export const useLocationStore = create<{
+  location: { lat: number; lng: number } | null;
+  setLocation: (l: { lat: number; lng: number } | null) => void;
+}>()((set) => ({ location: null, setLocation: (location) => set({ location }) }));

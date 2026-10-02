@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
   const ru = getDictionary("ru");
   await step("webhook", () =>
-    bot.api.setWebhook(`${siteUrl}/api/bot`, { secret_token: secret, allowed_updates: ["message"], drop_pending_updates: true }),
+    bot.api.setWebhook(`${siteUrl}/api/bot`, { secret_token: secret, allowed_updates: ["message", "callback_query"], drop_pending_updates: true }),
   );
   // Default menu button opens "/", which redirects to the user's language.
   await step("menuButton", () =>
@@ -55,7 +55,15 @@ export async function GET(request: Request) {
     // Russian is the fallback for every other Telegram language.
     const language_code = locale === "ru" ? undefined : locale;
     await step(`texts:${locale}`, async () => {
-      await bot.api.setMyCommands([{ command: "start", description: t.commandStart }], { language_code });
+      // Drop unscoped commands from earlier setups so customer commands don't show up in groups.
+      await bot.api.deleteMyCommands({ language_code });
+      await bot.api.setMyCommands(
+        [
+          { command: "start", description: t.commandStart },
+          { command: "stop", description: t.commandStop },
+        ],
+        { language_code, scope: { type: "all_private_chats" } },
+      );
       await bot.api.setMyShortDescription(t.shortDescription, { language_code });
       await bot.api.setMyDescription(t.description, { language_code });
     });
@@ -63,6 +71,18 @@ export async function GET(request: Request) {
 
   const me = await bot.api.getMe().catch(() => null);
   const ordersChat = getOrdersChatId();
+  if (ordersChat) {
+    // Staff commands appear only in the orders group.
+    await step("groupCommands", () =>
+      bot.api.setMyCommands(
+        [
+          { command: "admin", description: "Стоп-лист и рассылка" },
+          { command: "chatid", description: "ID этого чата" },
+        ],
+        { scope: { type: "chat", chat_id: ordersChat } },
+      ),
+    );
+  }
   const orders = ordersChat && me ? await checkOrdersChat(bot, ordersChat, me.id) : null;
 
   return Response.json({

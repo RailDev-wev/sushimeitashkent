@@ -15,6 +15,8 @@ export const orderSchema = z
       .array(z.object({ id: z.string().max(80), qty: z.number().int().min(1).max(50) }))
       .min(1)
       .max(60),
+    /** Empty from clients that predate branches; the server falls back to the first branch. */
+    branchId: z.string().max(40).default(""),
     name: z.string().trim().min(1).max(60),
     phone: z.string().trim().max(30),
     deliveryType: z.enum(["delivery", "pickup"]),
