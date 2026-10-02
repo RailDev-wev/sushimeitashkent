@@ -70,6 +70,10 @@
   "bot": {
     "start": "SUSHIMEI ga xush kelibsiz 🍣\n\nMenyuni ochish va buyurtma berish uchun quyidagi tugmani bosing. Buyurtmadan so‘ng operator tasdiqlash uchun qo‘ng‘iroq qiladi.",
     "openMenu": "Menyuni ochish",
-    "orderReceived": "Rahmat! {no} raqamli buyurtma qabul qilindi ✅\nSumma: {total}\n\nOperator tez orada tasdiqlash uchun qo‘ng‘iroq qiladi."
+    "orderReceived": "Rahmat! {no} raqamli buyurtma qabul qilindi ✅\nSumma: {total}\n\nOperator tez orada tasdiqlash uchun qo‘ng‘iroq qiladi.",
+    "menuButton": "Menyu",
+    "commandStart": "Menyuni ochish",
+    "shortDescription": "SUSHIMEI — sushi va rollar yetkazib berish",
+    "description": "Menyu, savat va bir necha bosishda buyurtma. Operator tasdiqlash uchun qo‘ng‘iroq qiladi."
   }
 }

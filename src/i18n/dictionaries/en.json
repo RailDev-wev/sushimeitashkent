@@ -70,6 +70,10 @@
   "bot": {
     "start": "Welcome to SUSHIMEI 🍣\n\nTap the button below to open the menu and place an order. Our operator will call you to confirm it.",
     "openMenu": "Open menu",
-    "orderReceived": "Thank you! Order {no} received ✅\nTotal: {total}\n\nOur operator will call you shortly to confirm."
+    "orderReceived": "Thank you! Order {no} received ✅\nTotal: {total}\n\nOur operator will call you shortly to confirm.",
+    "menuButton": "Menu",
+    "commandStart": "Open menu",
+    "shortDescription": "SUSHIMEI sushi & rolls delivery",
+    "description": "Menu, cart and ordering in a few taps. Our operator will call you to confirm."
   }
 }

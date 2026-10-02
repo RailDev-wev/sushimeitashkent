@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { Providers } from "@/components/Providers";
+import { getSiteUrl } from "@/lib/site-url";
 import "../globals.css";
 
 const manrope = Manrope({
@@ -20,10 +21,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   const { lang } = await params;
   if (!hasLocale(lang)) return {};
   const dict = getDictionary(lang);
+  const siteUrl = getSiteUrl();
   return {
     title: dict.meta.title,
     description: dict.meta.description,
-    metadataBase: process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL) : undefined,
+    metadataBase: siteUrl ? new URL(siteUrl) : undefined,
     alternates: { languages: Object.fromEntries(locales.map((l) => [l, `/${l}`])) },
   };
 }
