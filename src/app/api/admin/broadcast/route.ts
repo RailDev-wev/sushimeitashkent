@@ -1,4 +1,4 @@
-import { authStaff } from "@/lib/admin-auth";
+import { authAdmin } from "@/lib/admin-auth";
 import { broadcast } from "@/lib/broadcast";
 import { CAPTION_LIMIT, TEXT_LIMIT } from "@/lib/broadcast-limits";
 import { db } from "@/lib/db";
@@ -14,7 +14,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // Telegram's limit for photos
  * test=1 to send only to the staff member who pressed the button.
  */
 export async function POST(request: Request) {
-  const user = await authStaff(request);
+  const user = await authAdmin(request);
   const bot = getBot();
   if (!user || !bot) return Response.json({ error: "forbidden" }, { status: 403 });
 

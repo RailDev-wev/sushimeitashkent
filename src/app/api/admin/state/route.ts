@@ -1,5 +1,5 @@
 import { branches } from "@/config/branches";
-import { authStaff } from "@/lib/admin-auth";
+import { authAdmin } from "@/lib/admin-auth";
 import { db, hasDatabase } from "@/lib/db";
 import { getAllItemsRu, getMenu } from "@/lib/menu";
 
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 /** Everything the admin Mini App needs on load. */
 export async function GET(request: Request) {
-  const user = await authStaff(request);
+  const user = await authAdmin(request);
   if (!user) return Response.json({ error: "forbidden" }, { status: 403 });
 
   const [stopList, subscribers] = await Promise.all([db.getStopList(), db.listSubscribers()]);

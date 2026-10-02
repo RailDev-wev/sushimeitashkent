@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getBranch } from "@/config/branches";
-import { authStaff } from "@/lib/admin-auth";
+import { authAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { getOrderableItem } from "@/lib/menu";
 
@@ -9,7 +9,7 @@ const schema = z.object({ branchId: z.string(), itemId: z.string(), available: z
 
 /** Switches an item on/off for one branch and refreshes the static menu pages. */
 export async function POST(request: Request) {
-  const user = await authStaff(request);
+  const user = await authAdmin(request);
   if (!user) return Response.json({ error: "forbidden" }, { status: 403 });
 
   const parsed = schema.safeParse(await request.json().catch(() => null));

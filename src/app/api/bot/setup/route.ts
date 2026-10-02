@@ -73,16 +73,17 @@ export async function GET(request: Request) {
   const me = await bot.api.getMe().catch(() => null);
   const ordersChat = getOrdersChatId();
   if (ordersChat) {
-    // Staff commands appear only in the orders group.
-    await step("groupCommands", () =>
-      bot.api.setMyCommands(
+    // Admin commands are suggested only to the orders group's administrators.
+    await step("groupCommands", async () => {
+      await bot.api.deleteMyCommands({ scope: { type: "chat", chat_id: ordersChat } });
+      await bot.api.setMyCommands(
         [
           { command: "admin", description: "Стоп-лист и рассылка" },
           { command: "chatid", description: "ID этого чата" },
         ],
-        { scope: { type: "chat", chat_id: ordersChat } },
-      ),
-    );
+        { scope: { type: "chat_administrators", chat_id: ordersChat } },
+      );
+    });
   }
   const orders = ordersChat && me ? await checkOrdersChat(bot, ordersChat, me.id) : null;
 

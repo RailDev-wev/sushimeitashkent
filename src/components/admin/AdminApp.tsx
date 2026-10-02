@@ -32,7 +32,7 @@ export function AdminApp() {
     if (!getTelegram()) return;
     adminFetch("/api/admin/state")
       .then(async (res) => {
-        if (res.status === 403) throw new Error("Нет доступа: админка только для участников группы заказов.");
+        if (res.status === 403) throw new Error("Нет доступа: админка только для администраторов группы заказов.");
         if (!res.ok) throw new Error("Не удалось загрузить данные. Попробуйте ещё раз.");
         setState(await res.json());
       })

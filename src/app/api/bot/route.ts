@@ -1,7 +1,7 @@
 import { InlineKeyboard, webhookCallback, type Bot, type Context } from "grammy";
 import { defaultLocale, matchLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
-import { isStaff } from "@/lib/admin-auth";
+import { isAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { parseTake, takenKeyboard } from "@/lib/order-actions";
 import { getSiteUrl } from "@/lib/site-url";
@@ -14,8 +14,8 @@ function setup(bot: Bot) {
 
   /** Private chat only: Telegram doesn't allow Mini App buttons in groups. */
   async function sendAdminButton(ctx: Context) {
-    if (!ctx.from || !(await isStaff(ctx.from.id))) {
-      return ctx.reply("Админка доступна только участникам группы заказов.");
+    if (!ctx.from || !(await isAdmin(ctx.from.id))) {
+      return ctx.reply("Админка доступна только администраторам группы заказов.");
     }
     if (!siteUrl) return ctx.reply("Не задан адрес сайта.");
     return ctx.reply("Стоп-лист и рассылка:", {
