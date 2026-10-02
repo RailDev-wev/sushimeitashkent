@@ -3,6 +3,7 @@ import type { Bot } from "grammy";
 import { locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getSiteUrl } from "@/lib/site-url";
+import { db, hasDatabase } from "@/lib/db";
 import { getBot, getOrdersChatId, migratedChatId } from "@/lib/telegram-server";
 
 export const dynamic = "force-dynamic";
@@ -85,10 +86,19 @@ export async function GET(request: Request) {
   }
   const orders = ordersChat && me ? await checkOrdersChat(bot, ordersChat, me.id) : null;
 
+  // Also creates the tables on first run.
+  const database = !hasDatabase
+    ? "не подключена: Vercel → Storage → Neon, затем Redeploy"
+    : await db
+        .listSubscribers()
+        .then((s) => `ok, подписчиков: ${s.length}`)
+        .catch((err) => `ошибка: ${err instanceof Error ? err.message : String(err)}`);
+
   return Response.json({
     bot: me ? `@${me.username}` : null,
     siteUrl,
     steps,
+    database,
     ordersChat,
     ordersChatCheck: orders?.status ?? null,
     next: !ordersChat
