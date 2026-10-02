@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "title": "SUSHIMEI — sushi & rolls delivery",
+    "description": "Rolls, sets and sushi delivered. Order online or in Telegram."
+  },
+  "currency": "UZS",
+  "menu": {
+    "searchPlaceholder": "Search rolls, sets, drinks…",
+    "searchEmpty": "Nothing found",
+    "pcs": "{n} pcs",
+    "add": "Add",
+    "new": "New"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "toMenu": "Go to menu",
+    "total": "Total",
+    "clear": "Clear",
+    "open": "Cart",
+    "checkout": "Checkout"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "contacts": "Contact details",
+    "name": "Name",
+    "phone": "Phone",
+    "phoneFromTelegram": "Use my Telegram number",
+    "howToGet": "How to get it",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "address": "Address",
+    "addressPlaceholder": "Street, building, landmark",
+    "details": "Entrance, floor, apartment",
+    "location": "Share my location",
+    "locationAdded": "Location added",
+    "locationError": "Couldn’t get your location",
+    "pickupFrom": "Pickup address: {address}",
+    "payment": "Pay on receipt",
+    "cash": "Cash",
+    "card": "Card",
+    "comment": "Comment",
+    "commentPlaceholder": "Special requests, preferred time, etc.",
+    "submit": "Place order",
+    "sending": "Sending…",
+    "note": "No online payment. After you place the order, our operator will call you to confirm it and the delivery fee."
+  },
+  "errors": {
+    "required": "Required",
+    "phone": "Check the phone number",
+    "generic": "Couldn’t send the order. Please try again.",
+    "callUs": "Or call us: {phone}",
+    "rateLimit": "Too many orders in a row. Please wait a couple of minutes.",
+    "unavailable": "Some items are no longer available — please update your cart."
+  },
+  "success": {
+    "title": "Order received!",
+    "text": "Your order number is {no}. Our operator will call you shortly to confirm the details.",
+    "back": "Back to menu",
+    "close": "Close"
+  },
+  "footer": {
+    "hours": "Opening hours",
+    "phone": "Phone",
+    "address": "Address",
+    "daily": "daily",
+    "openMap": "Open in maps",
+    "call": "Call"
+  },
+  "bot": {
+    "start": "Welcome to SUSHIMEI 🍣\n\nTap the button below to open the menu and place an order. Our operator will call you to confirm it.",
+    "openMenu": "Open menu",
+    "orderReceived": "Thank you! Order {no} received ✅\nTotal: {total}\n\nOur operator will call you shortly to confirm."
+  }
+}

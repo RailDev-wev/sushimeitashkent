@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* Brand tokens. Swap these once the brand colours are known. */
+:root {
+  --bg: #faf7f4;
+  --surface: #ffffff;
+  --surface-2: #f3eee9;
+  --text: #1c1715;
+  --muted: #7b716a;
+  --line: #ebe4dd;
+  --accent: #d6402b;
+  --accent-hover: #bf3522;
+  --accent-fg: #ffffff;
+  --accent-soft: #fbe8e3;
+  --success: #2f8f5b;
+  --danger: #c62828;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121010;
+    --surface: #1c1918;
+    --surface-2: #262220;
+    --text: #f4efeb;
+    --muted: #a0958d;
+    --line: #2e2826;
+    --accent: #ef5f49;
+    --accent-hover: #f47462;
+    --accent-fg: #ffffff;
+    --accent-soft: #3a201b;
+    --success: #4cbf7f;
+    --danger: #ef5350;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #121010;
+  --surface: #1c1918;
+  --surface-2: #262220;
+  --text: #f4efeb;
+  --muted: #a0958d;
+  --line: #2e2826;
+  --accent: #ef5f49;
+  --accent-hover: #f47462;
+  --accent-fg: #ffffff;
+  --accent-soft: #3a201b;
+  --success: #4cbf7f;
+  --danger: #ef5350;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* iOS zooms into inputs below 16px */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

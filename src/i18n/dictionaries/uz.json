@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "title": "SUSHIMEI — sushi va rollar yetkazib berish",
+    "description": "Rollar, setlar va sushi yetkazib berish. Onlayn yoki Telegram orqali buyurtma bering."
+  },
+  "currency": "so‘m",
+  "menu": {
+    "searchPlaceholder": "Roll, set, ichimlik qidirish…",
+    "searchEmpty": "Hech narsa topilmadi",
+    "pcs": "{n} dona",
+    "add": "Savatga",
+    "new": "Yangi"
+  },
+  "cart": {
+    "title": "Savat",
+    "empty": "Savat hozircha bo‘sh",
+    "toMenu": "Menyuga o‘tish",
+    "total": "Jami",
+    "clear": "Tozalash",
+    "open": "Savat",
+    "checkout": "Buyurtma berish"
+  },
+  "checkout": {
+    "title": "Buyurtmani rasmiylashtirish",
+    "contacts": "Aloqa",
+    "name": "Ism",
+    "phone": "Telefon",
+    "phoneFromTelegram": "Raqamni Telegramdan olish",
+    "howToGet": "Qanday olasiz",
+    "delivery": "Yetkazib berish",
+    "pickup": "Olib ketish",
+    "address": "Manzil",
+    "addressPlaceholder": "Ko‘cha, uy, mo‘ljal",
+    "details": "Podyezd, qavat, xonadon",
+    "location": "Geolokatsiyani yuborish",
+    "locationAdded": "Geolokatsiya qo‘shildi",
+    "locationError": "Joylashuvni aniqlab bo‘lmadi",
+    "pickupFrom": "Olib ketish manzili: {address}",
+    "payment": "Qabul qilishda to‘lov",
+    "cash": "Naqd",
+    "card": "Karta orqali",
+    "comment": "Izoh",
+    "commentPlaceholder": "Buyurtma bo‘yicha istaklar, qulay vaqt va h.k.",
+    "submit": "Buyurtmani yuborish",
+    "sending": "Yuborilmoqda…",
+    "note": "Onlayn to‘lov yo‘q. Yuborganingizdan so‘ng operator qo‘ng‘iroq qilib, buyurtma va yetkazib berish narxini tasdiqlaydi."
+  },
+  "errors": {
+    "required": "Maydonni to‘ldiring",
+    "phone": "Telefon raqamini tekshiring",
+    "generic": "Buyurtmani yuborib bo‘lmadi. Qaytadan urinib ko‘ring.",
+    "callUs": "Yoki bizga qo‘ng‘iroq qiling: {phone}",
+    "rateLimit": "Juda ko‘p buyurtma. Bir necha daqiqa kuting.",
+    "unavailable": "Ba’zi taomlar mavjud emas — savatni yangilang."
+  },
+  "success": {
+    "title": "Buyurtma qabul qilindi!",
+    "text": "Buyurtma raqami — {no}. Operator tez orada qo‘ng‘iroq qilib, tafsilotlarni tasdiqlaydi.",
+    "back": "Menyuga qaytish",
+    "close": "Yopish"
+  },
+  "footer": {
+    "hours": "Ish vaqti",
+    "phone": "Telefon",
+    "address": "Manzil",
+    "daily": "har kuni",
+    "openMap": "Xaritada ochish",
+    "call": "Qo‘ng‘iroq qilish"
+  },
+  "bot": {
+    "start": "SUSHIMEI ga xush kelibsiz 🍣\n\nMenyuni ochish va buyurtma berish uchun quyidagi tugmani bosing. Buyurtmadan so‘ng operator tasdiqlash uchun qo‘ng‘iroq qiladi.",
+    "openMenu": "Menyuni ochish",
+    "orderReceived": "Rahmat! {no} raqamli buyurtma qabul qilindi ✅\nSumma: {total}\n\nOperator tez orada tasdiqlash uchun qo‘ng‘iroq qiladi."
+  }
+}
