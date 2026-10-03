@@ -95,6 +95,19 @@ export async function GET(request: Request) {
         .then((s) => `ok, подписчиков: ${s.length}`)
         .catch((err) => `ошибка: ${err instanceof Error ? err.message : String(err)}`);
 
+  // Who can open the admin panel (owner + administrators of the orders group).
+  const admins =
+    ordersChat && orders?.ok
+      ? await bot.api
+          .getChatAdministrators(ordersChat)
+          .then((list) =>
+            list
+              .filter((m) => !m.user.is_bot)
+              .map((m) => `${[m.user.first_name, m.user.last_name].filter(Boolean).join(" ")}${m.user.username ? ` @${m.user.username}` : ""} — ${m.status === "creator" ? "владелец" : "админ"}`),
+          )
+          .catch((err) => [`не удалось получить: ${err instanceof Error ? err.message : String(err)}`])
+      : null;
+
   return Response.json({
     bot: me ? `@${me.username}` : null,
     siteUrl,
@@ -102,6 +115,7 @@ export async function GET(request: Request) {
     database,
     ordersChat,
     ordersChatCheck: orders?.status ?? null,
+    adminPanelAccess: admins,
     next: !ordersChat
       ? "Добавьте бота в группу заказов, отправьте там /chatid, впишите число в TELEGRAM_ORDERS_CHAT_ID в Vercel и сделайте Redeploy."
       : orders?.ok

@@ -32,7 +32,12 @@ export function AdminApp() {
     if (!getTelegram()) return;
     adminFetch("/api/admin/state")
       .then(async (res) => {
-        if (res.status === 403) throw new Error("Нет доступа: админка только для администраторов группы заказов.");
+        if (res.status === 403) {
+          const { reason } = await res.json().catch(() => ({}));
+          throw new Error(`Нет доступа: админка только для владельца и администраторов группы заказов.${reason ? `
+
+Причина: ${reason}.` : ""}`);
+        }
         if (!res.ok) throw new Error("Не удалось загрузить данные. Попробуйте ещё раз.");
         setState(await res.json());
       })
@@ -88,5 +93,9 @@ export function AdminApp() {
 }
 
 function Notice({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto flex min-h-[60dvh] max-w-md items-center justify-center px-6 text-center text-muted">{children}</main>;
+  return (
+    <main className="mx-auto flex min-h-[60dvh] max-w-md items-center justify-center px-6 text-center whitespace-pre-line text-muted">
+      {children}
+    </main>
+  );
 }
