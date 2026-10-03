@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { getOrderableItem } from "@/lib/menu";
 import { takeKeyboard } from "@/lib/order-actions";
 import { normalizePhone, orderSchema, type Order } from "@/lib/order-schema";
-import { escapeHtml, getBot, getOrdersChatId, migratedChatId, verifyInitData, type TelegramUser } from "@/lib/telegram-server";
+import { escapeHtml, getBot, getOrdersChatId, verifyInitData, withOrdersChat, type TelegramUser } from "@/lib/telegram-server";
 
 // Best-effort per-instance limit; enough to stop accidental double submits and casual spam.
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -134,39 +134,28 @@ export async function POST(request: Request) {
   if (tgUser) {
     await db.upsertCustomer(tgUser, { phone, ordered: true }).catch((err) => console.error("[order] customer upsert failed", err));
   }
-  let chatId = getOrdersChatId();
-
-  if (!bot || !chatId) {
+  if (!bot || !getOrdersChatId()) {
     // Local dev without a bot: print what would be sent.
-    console.log(`[order] TELEGRAM_BOT_TOKEN / TELEGRAM_ORDERS_CHAT_ID not set, not sending:\n${text}`);
+    console.log(`[order] TELEGRAM_BOT_TOKEN / TELEGRAM_ORDERS_CHAT_ID not set, not sending:
+${text}`);
     return Response.json({ orderNo });
   }
 
-  const send = (to: string | number) =>
-    bot.api.sendMessage(to, text, {
-      parse_mode: "HTML",
-      link_preview_options: { is_disabled: true },
-      reply_markup: takeKeyboard(),
-    });
-
   try {
-    let sent;
-    try {
-      sent = await send(chatId);
-    } catch (err) {
-      const newId = migratedChatId(err);
-      if (!newId) throw err;
-      console.warn(`[order] staff group became a supergroup: set TELEGRAM_ORDERS_CHAT_ID=${newId}`);
-      chatId = String(newId);
-      sent = await send(chatId);
-    }
-    if (order.location) {
-      await bot.api
-        .sendLocation(chatId, order.location.lat, order.location.lng, {
-          reply_parameters: { message_id: sent.message_id },
-        })
-        .catch((err) => console.error("[order] sendLocation failed", err));
-    }
+    await withOrdersChat(async (chatId) => {
+      const sent = await bot.api.sendMessage(chatId, text, {
+        parse_mode: "HTML",
+        link_preview_options: { is_disabled: true },
+        reply_markup: takeKeyboard(),
+      });
+      if (order.location) {
+        await bot.api
+          .sendLocation(chatId, order.location.lat, order.location.lng, {
+            reply_parameters: { message_id: sent.message_id },
+          })
+          .catch((err) => console.error("[order] sendLocation failed", err));
+      }
+    });
   } catch (err) {
     console.error("[order] failed to send to staff chat", err);
     return Response.json({ error: "server" }, { status: 502 });

@@ -57,6 +57,27 @@ export function migratedChatId(err: unknown): number | null {
   return err instanceof GrammyError ? (err.parameters.migrate_to_chat_id ?? null) : null;
 }
 
+let migratedOrdersChat: string | null = null;
+
+/**
+ * Runs a Bot API call against the orders group. Telegram changes a group's id when it becomes a
+ * supergroup (e.g. after granting admin rights); the old id then fails with migrate_to_chat_id.
+ * We switch to the new id for this instance and log it so TELEGRAM_ORDERS_CHAT_ID can be updated.
+ */
+export async function withOrdersChat<T>(fn: (chatId: string) => Promise<T>): Promise<T> {
+  const chatId = migratedOrdersChat ?? getOrdersChatId();
+  if (!chatId) throw new Error("TELEGRAM_ORDERS_CHAT_ID is not set");
+  try {
+    return await fn(chatId);
+  } catch (err) {
+    const newId = migratedChatId(err);
+    if (!newId) throw err;
+    console.warn(`[telegram] orders group became a supergroup: set TELEGRAM_ORDERS_CHAT_ID=${newId}`);
+    migratedOrdersChat = String(newId);
+    return fn(migratedOrdersChat);
+  }
+}
+
 let bot: Bot | null = null;
 
 /** Shared grammY instance, or null when TELEGRAM_BOT_TOKEN isn't configured (local dev). */

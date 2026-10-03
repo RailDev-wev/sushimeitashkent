@@ -1,5 +1,5 @@
 import "server-only";
-import { getBot, getOrdersChatId, verifyInitData, type TelegramUser } from "./telegram-server";
+import { getBot, getOrdersChatId, verifyInitData, withOrdersChat, type TelegramUser } from "./telegram-server";
 
 // Admin = owner or administrator of the orders group. Access is managed with ordinary Telegram
 // admin rights: no passwords or id lists, and demoting someone revokes it (within the cache window).
@@ -19,10 +19,9 @@ const STATUS_RU: Record<string, string> = {
 /** The user's role in the orders group as Telegram reports it, in Russian (for "access denied" replies). */
 export async function describeGroupStatus(userId: number): Promise<string> {
   const bot = getBot();
-  const chatId = getOrdersChatId();
-  if (!bot || !chatId) return "группа заказов не настроена";
+  if (!bot || !getOrdersChatId()) return "группа заказов не настроена";
   try {
-    const m = await bot.api.getChatMember(chatId, userId);
+    const m = await withOrdersChat((chatId) => bot.api.getChatMember(chatId, userId));
     return STATUS_RU[m.status] ?? m.status;
   } catch (err) {
     return `не удалось проверить (${err instanceof Error ? err.message : String(err)})`;
@@ -31,15 +30,14 @@ export async function describeGroupStatus(userId: number): Promise<string> {
 
 export async function isAdmin(userId: number): Promise<boolean> {
   const bot = getBot();
-  const chatId = getOrdersChatId();
-  if (!bot || !chatId) return false;
+  if (!bot || !getOrdersChatId()) return false;
 
   const hit = cache.get(userId);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.ok;
 
   let ok = false;
   try {
-    const m = await bot.api.getChatMember(chatId, userId);
+    const m = await withOrdersChat((chatId) => bot.api.getChatMember(chatId, userId));
     ok = m.status === "creator" || m.status === "administrator";
   } catch (err) {
     console.error(`[admin] getChatMember failed for ${userId}`, err);
